@@ -91,5 +91,55 @@ pipeline {
                 sh 'cargo test --no-default-features --release'
             }
         }
+        stage('DEBUG') {
+            agent {
+                docker { 
+                    image 'rust:latest' 
+                    reuseNode true
+                }
+            }
+            steps {
+                // Fail intentionally to test
+                sh 'exit -1'
+            }
+        }
+    }
+    post {
+        unsuccessful {
+            mail body: '''
+The Jenkins pipeline *${JOB_NAME}* (/${BUILD_DISPLAY_NAME}/) for 
+branch '${BRANCH_NAME}' has failed.
+Check the job <${JOB_URL}> or build <${BUILD_URL}> on jenkins for more 
+information
+
+---
+
+This message was automatically send by Jenkins.
+''', bcc: '', cc: '', charset: 'UTF-8', from: 'dev@sakul-flee.de', mimeType: 'text/plain', replyTo: 'dev@sakul-flee.de', subject: 'Jenkins Job ${JOB_NAME} (${BUILD_DISPLAY_NUMBER}) failed for branch "${BRANCH_NAME}"', to: 'dev@sakul-flee.de'
+        }
+        fixed {
+            mail body: '''
+The Jenkins pipeline *${JOB_NAME}* (/${BUILD_DISPLAY_NAME}/) for 
+branch '${BRANCH_NAME}' has failed.
+Check the job <${JOB_URL}> or build <${BUILD_URL}> on jenkins for more 
+information
+
+---
+
+This message was automatically send by Jenkins.
+''', bcc: '', cc: '', charset: 'UTF-8', from: 'dev@sakul-flee.de', mimeType: 'text/plain', replyTo: 'dev@sakul-flee.de', subject: 'Jenkins Job ${JOB_NAME} (${BUILD_DISPLAY_NUMBER}) got fixed for branch "${BRANCH_NAME}"', to: 'dev@sakul-flee.de'
+        }
+        changed {
+            mail body: '''
+The Jenkins pipeline *${JOB_NAME}* (/${BUILD_DISPLAY_NAME}/) for 
+branch '${BRANCH_NAME}' changed status
+Check the job <${JOB_URL}> or build <${BUILD_URL}> on jenkins for more 
+information
+
+---
+
+This message was automatically send by Jenkins.
+''', bcc: '', cc: '', charset: 'UTF-8', from: 'dev@sakul-flee.de', mimeType: 'text/plain', replyTo: 'dev@sakul-flee.de', subject: 'Jenkins Job ${JOB_NAME} (${BUILD_DISPLAY_NUMBER}) changed status for branch "${BRANCH_NAME}"', to: 'dev@sakul-flee.de'
+        }
     }
 }
