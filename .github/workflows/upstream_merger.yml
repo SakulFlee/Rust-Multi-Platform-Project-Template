@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        repository: [rust-multiplatform/Windowing-Template, rust-multiplatform/SlintUI-Template, rust-multiplatform/Base-Engine-Library, rust-multiplatform/Bevy-Template, rust-multiplatform/Graphical-Engine-Template, rust-multiplatform/Compute-Engine-Template]
+        repository: [rust-multiplatform/Windowing-Template, rust-multiplatform/SlintUI-Template, rust-multiplatform/Base-Engine-Library, rust-multiplatform/Bevy-Template, rust-multiplatform/Graphical-Engine-Template, rust-multiplatform/Compute-Engine-Template, rust-multiplatform/Base-Engine-Template]
 
     steps:
       - name: Merge upstream
@@ -42,11 +42,10 @@ jobs:
           git fetch --all
 
           echo "> Merging ..."
-          git checkout -b upstream || true
-          git switch upstream || true
-          git merge upstream/main origin/upstream || true
+          git switch main 
+          git merge -s ours upstream/main
 
           echo "> Pushing ..."
           git add --all || true
           git commit -m "Upstream merge ($(date +%d.%m.%Y_%H:%M:%S))" || true
-          git push origin upstream
+          git push origin main
