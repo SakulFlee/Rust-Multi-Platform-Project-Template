@@ -18,7 +18,7 @@ shared = { path = "../../shared" }
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21"
-libc = "0.2"
+libc = "0.2.154"
 log = "0.4"
 ndk = { version = "0.7", features = ["api-level-23"] }
 ndk-context = "0.1"
