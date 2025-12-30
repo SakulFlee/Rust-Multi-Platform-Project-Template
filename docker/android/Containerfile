@@ -1,0 +1,57 @@
+ARG RUST_VERSION=1.95
+FROM rust:${RUST_VERSION}
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    openjdk-11-jdk \
+    wget \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up Android SDK
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_NDK_HOME=/opt/android-sdk/ndk/25.1.8937393
+ENV PATH=${PATH}:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools
+
+# Create directories
+RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
+    mkdir -p ${ANDROID_HOME}/platform-tools
+
+# Download and install Android SDK Command Line Tools
+RUN cd /tmp && \
+    wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
+    unzip commandlinetools-linux-9477386_latest.zip -d cmdline-tools-temp && \
+    mv cmdline-tools-temp/cmdline-tools/latest ${ANDROID_HOME}/cmdline-tools/ && \
+    rm -rf cmdline-tools-temp commandlinetools-linux-9477386_latest.zip
+
+# Accept licenses
+RUN yes | sdkmanager --licenses
+
+# Install required Android components
+RUN sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.1.8937393"
+
+# Install Rust Android targets
+RUN rustup target add x86_64-linux-android \
+    aarch64-linux-android \
+    i686-linux-android \
+    armv7-linux-androideabi
+
+# Set up the working directory
+WORKDIR /workspace
+
+# Copy the project files
+COPY . .
+
+# Initialize git submodules
+RUN git submodule update --init --recursive
+
+# Install cargo-apk
+RUN cargo install cargo-apk
+
+# Set environment variables
+ENV CARGO_TERM_COLOR=always
+ENV RUST_BACKTRACE=1
+
+# Default command
+CMD ["bash"]

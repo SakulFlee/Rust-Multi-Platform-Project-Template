@@ -1,0 +1,57 @@
+# Use the osxcross base image with Ubuntu
+ARG OSXCROSS_VERSION=latest
+FROM --platform=$BUILDPLATFORM crazymax/osxcross:${OSXCROSS_VERSION}-ubuntu AS osxcross
+
+FROM ubuntu:22.04
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    clang \
+    lld \
+    libc6-dev \
+    curl \
+    wget \
+    ca-certificates \
+    build-essential \
+    git \
+    jq \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy osxcross tools from the base image
+COPY --from=osxcross /osxcross
+
+# Set up environment variables
+ENV PATH="/osxcross/bin:$PATH"
+ENV LD_LIBRARY_PATH="/osxcross/lib:$LD_LIBRARY_PATH"
+ENV PKG_CONFIG_PATH="/osxcross/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+# Install Rust
+ARG RUST_VERSION=1.95
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${RUST_VERSION} --profile minimal
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Set up the working directory
+WORKDIR /workspace
+
+# Copy the project files
+COPY . .
+
+# Initialize git submodules
+RUN git submodule update --init --recursive
+
+# Install XCodeGen (for iOS builds)
+RUN curl -L https://github.com/yonaskolb/XcodeGen/releases/download/2.38.0/xcodegen_linux.tar.gz -o xcodegen.tar.gz && \
+    tar -xzf xcodegen.tar.gz && \
+    mv xcodegen /usr/local/bin/ && \
+    rm xcodegen.tar.gz
+
+# Install additional tools for iOS
+RUN rustup component add rust-src
+
+# Set environment variables
+ENV CARGO_TERM_COLOR=always
+ENV RUST_BACKTRACE=1
+
+# Default command
+CMD ["bash"]

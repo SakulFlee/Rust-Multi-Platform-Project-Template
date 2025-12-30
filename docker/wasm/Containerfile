@@ -1,0 +1,28 @@
+ARG RUST_VERSION=1.95
+FROM rust:${RUST_VERSION}
+
+# Install Node.js for WASM testing
+RUN apt-get update && apt-get install -y \
+    nodejs \
+    npm \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install wasm-pack
+RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+# Set up the working directory
+WORKDIR /workspace
+
+# Copy the project files
+COPY . .
+
+# Initialize git submodules
+RUN git submodule update --init --recursive
+
+# Set environment variables
+ENV CARGO_TERM_COLOR=always
+ENV RUST_BACKTRACE=1
+
+# Default command
+CMD ["bash"]

@@ -1,0 +1,34 @@
+ARG RUST_VERSION=1.95
+FROM rust:${RUST_VERSION}
+
+# Install MinGW-w64 for Windows cross-compilation
+RUN apt-get update && apt-get install -y \
+    gcc-mingw-w64 \
+    mingw-w64 \
+    mingw-w64-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up MinGW environment variables
+ENV CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc
+ENV CXX_x86_64_pc_windows_gnu=x86_64-w64-mingw32-g++
+ENV AR_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc-ar
+ENV CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc
+
+# Set up the working directory
+WORKDIR /workspace
+
+# Copy the project files
+COPY . .
+
+# Initialize git submodules
+RUN git submodule update --init --recursive
+
+# Install Rust target for Windows
+RUN rustup target add x86_64-pc-windows-gnu
+
+# Set environment variables
+ENV CARGO_TERM_COLOR=always
+ENV RUST_BACKTRACE=1
+
+# Default command
+CMD ["bash"]
