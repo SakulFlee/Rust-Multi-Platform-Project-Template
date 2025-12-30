@@ -161,6 +161,7 @@ pipeline {
                                       claimName: target-cache-pvc
                             """
                         }
+                    }
                     steps {
                         sh '''
                             git config --global --add safe.directory '*'
@@ -398,7 +399,7 @@ pipeline {
                             cp platform/ios/Cargo.toml platform/ios/Cargo.toml.original
                             
                             # Get and set device ID for simulator
-                            DEVICE_ID=$(xcrun simctl list devices available --json ios | jq -r ".devices | to_entries | map(select(.key | match(\\".*iOS.*\\"))) | map(.value)[0][0].udid")
+                            DEVICE_ID=$(xcrun simctl list devices available --json ios | jq -r ".devices | to_entries | map(select(.key | match(\".*iOS.*\"))) | map(.value)[0][0].udid")
                             sed -i "s/device_id = .*/device_id = ${DEVICE_ID}/g" platform/ios/Cargo.toml
                             
                             # Build
