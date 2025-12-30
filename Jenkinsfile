@@ -11,6 +11,9 @@ spec:
     command:
     - cat
     tty: true
+    securityContext:
+      runAsUser: 0
+      runAsGroup: 0
     resources:
       requests:
         memory: '2Gi'
