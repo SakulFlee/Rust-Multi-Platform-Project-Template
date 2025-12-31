@@ -7,7 +7,7 @@ pipeline {
                 spec:
                   containers:
                   - name: buildah
-                    image: quay.io/buildah/stable:v1.35.4
+                    image: quay.io/buildah/stable
                     command:
                     - cat
                     tty: true
@@ -51,36 +51,38 @@ pipeline {
 
         stage('Build Custom Container Images') {
             steps {
-                script {
-                    // Build Linux container
-                    sh '''
-                        cd docker/linux
-                        buildah bud -t rust-linux:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                    '''
-                    
-                    // Build Windows container
-                    sh '''
-                        cd docker/windows
-                        buildah bud -t rust-windows:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                    '''
-                    
-                    // Build Android container
-                    sh '''
-                        cd docker/android
-                        buildah bud -t rust-android:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                    '''
-                    
-                    // Build WASM container
-                    sh '''
-                        cd docker/wasm
-                        buildah bud -t rust-wasm:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                    '''
-                    
-                    // Build osxcross container (this one cannot be published)
-                    sh '''
-                        cd docker/osxcross
-                        buildah bud -t osxcross-rust:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                    '''
+                container('buildah') {
+                    script {
+                        // Build Linux container
+                        sh '''
+                            cd docker/linux
+                            buildah bud -t rust-linux:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        '''
+                        
+                        // Build Windows container
+                        sh '''
+                            cd docker/windows
+                            buildah bud -t rust-windows:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        '''
+                        
+                        // Build Android container
+                        sh '''
+                            cd docker/android
+                            buildah bud -t rust-android:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        '''
+                        
+                        // Build WASM container
+                        sh '''
+                            cd docker/wasm
+                            buildah bud -t rust-wasm:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        '''
+                        
+                        // Build osxcross container (this one cannot be published)
+                        sh '''
+                            cd docker/osxcross
+                            buildah bud -t osxcross-rust:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        '''
+                    }
                 }
             }
         }
@@ -477,10 +479,12 @@ pipeline {
             echo "Pipeline completed. Artifacts have been archived for each platform."
         }
         cleanup {
-            sh '''
-                # Clean up any temporary files
-                rm -rf target/*/debug
-            '''
+            container('buildah') {
+                sh '''
+                    # Clean up any temporary files
+                    rm -rf target/*/debug
+                '''
+            }
         }
     }
 }
