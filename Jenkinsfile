@@ -34,27 +34,11 @@ pipeline {
         string(
             name: 'RUST_VERSION',
             defaultValue: '1.92',
-            description: 'Rust version to use (format: X.Y, e.g., 1.92). Note: "latest" may not work for macOS/iOS builds.'
+            description: 'Rust version to use. The format follows the official Rust versioning.'
         )
     }
 
     stages {
-        stage('Validate Parameters') {
-            steps {
-                script {
-                    // Validate Rust version format using regex (X.Y format where X and Y are numbers)
-                    def rustVersionPattern = /^(\d+)\.(\d+)$/
-                    if (params.RUST_VERSION == 'latest') {
-                        echo "Warning: Using 'latest' Rust version. This may cause issues with macOS/iOS builds."
-                    } else if (!params.RUST_VERSION.matches(rustVersionPattern)) {
-                        error "Invalid Rust version format: ${params.RUST_VERSION}. Expected format: X.Y (e.g., 1.92, 1.94)"
-                    } else {
-                        echo "Using Rust version: ${params.RUST_VERSION}"
-                    }
-                }
-            }
-        }
-
         stage('Checkout and Submodules') {
             steps {
                 script {
