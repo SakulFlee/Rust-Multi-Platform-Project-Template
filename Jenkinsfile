@@ -6,21 +6,26 @@ pipeline {
                 kind: Pod
                 spec:
                   containers:
-                  - name: docker
-                    image: docker:latest
+                  - name: buildah
+                    image: quay.io/buildah/stable:v1.35.4
                     command:
                     - cat
                     tty: true
                     securityContext:
                       privileged: true
+                      runAsUser: 0
                     volumeMounts:
-                    - mountPath: /var/run/docker.sock
-                      name: docker-sock
+                    - mountPath: /run/containerd/containerd.sock
+                      name: containerd-sock
+                    - mountPath: /var/lib/containers
+                      name: containers-storage
                   volumes:
-                  - name: docker-sock
+                  - name: containerd-sock
                     hostPath:
-                      path: /var/run/docker.sock
+                      path: /run/k0s/containerd.sock
                       type: Socket
+                  - name: containers-storage
+                    emptyDir: {}
             """
         }
     }
@@ -50,31 +55,31 @@ pipeline {
                     // Build Linux container
                     sh '''
                         cd docker/linux
-                        podman build -t rust-linux:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        buildah bud -t rust-linux:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
                     '''
                     
                     // Build Windows container
                     sh '''
                         cd docker/windows
-                        podman build -t rust-windows:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        buildah bud -t rust-windows:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
                     '''
                     
                     // Build Android container
                     sh '''
                         cd docker/android
-                        podman build -t rust-android:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        buildah bud -t rust-android:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
                     '''
                     
                     // Build WASM container
                     sh '''
                         cd docker/wasm
-                        podman build -t rust-wasm:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        buildah bud -t rust-wasm:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
                     '''
                     
                     // Build osxcross container (this one cannot be published)
                     sh '''
                         cd docker/osxcross
-                        podman build -t osxcross-rust:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                        buildah bud -t osxcross-rust:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
                     '''
                 }
             }
