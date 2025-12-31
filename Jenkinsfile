@@ -130,18 +130,6 @@ pipeline {
                                     command:
                                     - cat
                                     tty: true
-                                    volumeMounts:
-                                    - mountPath: /home/jenkins/.cargo
-                                      name: cargo-cache
-                                    - mountPath: /workspace/target
-                                      name: target-cache
-                                  volumes:
-                                  - name: cargo-cache
-                                    persistentVolumeClaim:
-                                      claimName: cargo-cache-pvc
-                                  - name: target-cache
-                                    persistentVolumeClaim:
-                                      claimName: target-cache-pvc
                             """
                         }
                     }
@@ -179,18 +167,6 @@ pipeline {
                                     command:
                                     - cat
                                     tty: true
-                                    volumeMounts:
-                                    - mountPath: /home/jenkins/.cargo
-                                      name: cargo-cache
-                                    - mountPath: /workspace/target
-                                      name: target-cache
-                                  volumes:
-                                  - name: cargo-cache
-                                    persistentVolumeClaim:
-                                      claimName: cargo-cache-pvc
-                                  - name: target-cache
-                                    persistentVolumeClaim:
-                                      claimName: target-cache-pvc
                             """
                         }
                     }
@@ -233,18 +209,6 @@ pipeline {
                                       value: /opt/android-sdk
                                     - name: ANDROID_NDK_HOME
                                       value: /opt/android-sdk/ndk/25.1.8937393
-                                    volumeMounts:
-                                    - mountPath: /home/jenkins/.cargo
-                                      name: cargo-cache
-                                    - mountPath: /workspace/target
-                                      name: target-cache
-                                  volumes:
-                                  - name: cargo-cache
-                                    persistentVolumeClaim:
-                                      claimName: cargo-cache-pvc
-                                  - name: target-cache
-                                    persistentVolumeClaim:
-                                      claimName: target-cache-pvc
                             """
                         }
                     }
@@ -290,18 +254,6 @@ pipeline {
                                     command:
                                     - cat
                                     tty: true
-                                    volumeMounts:
-                                    - mountPath: /home/jenkins/.cargo
-                                      name: cargo-cache
-                                    - mountPath: /workspace/target
-                                      name: target-cache
-                                  volumes:
-                                  - name: cargo-cache
-                                    persistentVolumeClaim:
-                                      claimName: cargo-cache-pvc
-                                  - name: target-cache
-                                    persistentVolumeClaim:
-                                      claimName: target-cache-pvc
                             """
                         }
                     }
