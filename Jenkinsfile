@@ -68,32 +68,48 @@ pipeline {
         }
 
         stage('Build Custom Container Images') {
-            steps {
-                container('buildah') {
-                    script {
-                        // Build Linux container
-                        sh '''
-                            cd docker/linux
-                            buildah bud -t rust-linux:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                        '''
-                        
-                        // Build Windows container
-                        sh '''
-                            cd docker/windows
-                            buildah bud -t rust-windows:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                        '''
-                        
-                        // Build Android container
-                        sh '''
-                            cd docker/android
-                            buildah bud -t rust-android:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                        '''
-                        
-                        // Build WASM container
-                        sh '''
-                            cd docker/wasm
-                            buildah bud -t rust-wasm:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                        '''
+            parallel {
+                stage('Build Linux Container') {
+                    steps {
+                        container('buildah') {
+                            sh '''
+                                cd docker/linux
+                                buildah bud -t rust-linux:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                            '''
+                        }
+                    }
+                }
+                
+                stage('Build Windows Container') {
+                    steps {
+                        container('buildah') {
+                            sh '''
+                                cd docker/windows
+                                buildah bud -t rust-windows:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                            '''
+                        }
+                    }
+                }
+                
+                stage('Build Android Container') {
+                    steps {
+                        container('buildah') {
+                            sh '''
+                                cd docker/android
+                                buildah bud -t rust-android:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                            '''
+                        }
+                    }
+                }
+                
+                stage('Build WASM Container') {
+                    steps {
+                        container('buildah') {
+                            sh '''
+                                cd docker/wasm
+                                buildah bud -t rust-wasm:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                            '''
+                        }
                     }
                 }
             }
