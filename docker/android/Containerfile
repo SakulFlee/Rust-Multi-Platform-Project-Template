@@ -43,9 +43,6 @@ WORKDIR /workspace
 # Copy the project files
 COPY . .
 
-# Initialize git submodules
-RUN git submodule update --init --recursive
-
 # Install cargo-apk
 RUN cargo install cargo-apk
 

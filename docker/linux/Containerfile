@@ -16,9 +16,6 @@ WORKDIR /workspace
 # Copy the project files
 COPY . .
 
-# Initialize git submodules
-RUN git submodule update --init --recursive
-
 # Install Rust target for Linux
 RUN rustup target add x86_64-unknown-linux-gnu
 

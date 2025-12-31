@@ -17,9 +17,6 @@ WORKDIR /workspace
 # Copy the project files
 COPY . .
 
-# Initialize git submodules
-RUN git submodule update --init --recursive
-
 # Set environment variables
 ENV CARGO_TERM_COLOR=always
 ENV RUST_BACKTRACE=1

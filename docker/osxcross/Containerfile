@@ -37,9 +37,6 @@ WORKDIR /workspace
 # Copy the project files
 COPY . .
 
-# Initialize git submodules
-RUN git submodule update --init --recursive
-
 # Install XCodeGen (for iOS builds)
 RUN curl -L https://github.com/yonaskolb/XcodeGen/releases/download/2.38.0/xcodegen_linux.tar.gz -o xcodegen.tar.gz && \
     tar -xzf xcodegen.tar.gz && \

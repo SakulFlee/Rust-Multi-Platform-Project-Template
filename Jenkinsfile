@@ -55,6 +55,18 @@ pipeline {
             }
         }
 
+        stage('Checkout and Submodules') {
+            steps {
+                script {
+                    // Ensure git is available and checkout with submodules
+                    sh '''
+                        git config --global --add safe.directory '*'
+                        git submodule update --init --recursive
+                    '''
+                }
+            }
+        }
+
         stage('Build Custom Container Images') {
             steps {
                 container('buildah') {
@@ -126,7 +138,6 @@ pipeline {
                     steps {
                         sh '''
                             git config --global --add safe.directory '*'
-                            git submodule update --init --recursive
                             
                             # Install target
                             rustup target add x86_64-unknown-linux-gnu
@@ -178,7 +189,6 @@ pipeline {
                     steps {
                         sh '''
                             git config --global --add safe.directory '*'
-                            git submodule update --init --recursive
                             
                             # Install target
                             rustup target add x86_64-apple-darwin
@@ -230,7 +240,6 @@ pipeline {
                     steps {
                         sh '''
                             git config --global --add safe.directory '*'
-                            git submodule update --init --recursive
                             
                             # Install target
                             rustup target add aarch64-apple-darwin
@@ -280,7 +289,6 @@ pipeline {
                     steps {
                         sh '''
                             git config --global --add safe.directory '*'
-                            git submodule update --init --recursive
                             
                             # Install target
                             rustup target add x86_64-pc-windows-gnu
@@ -335,7 +343,6 @@ pipeline {
                     steps {
                         sh '''
                             git config --global --add safe.directory '*'
-                            git submodule update --init --recursive
                             
                             # Install Android targets
                             rustup target add x86_64-linux-android
@@ -348,7 +355,7 @@ pipeline {
                             
                             # Generate Release KeyStore
                             cd platform/android/.android
-                            echo -e "android\nandroid\n\n\n\n\n\n\nyes" | keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000
+                            echo -e "android\nandroid\n\n\n\n\n\nyes" | keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000
                             
                             # Build
                             cd ../../..
@@ -395,7 +402,6 @@ pipeline {
                     steps {
                         sh '''
                             git config --global --add safe.directory '*'
-                            git submodule update --init --recursive
                             
                             # Install iOS targets
                             rustup target add x86_64-apple-ios
@@ -458,7 +464,6 @@ pipeline {
                     steps {
                         sh '''
                             git config --global --add safe.directory '*'
-                            git submodule update --init --recursive
                             
                             # Install wasm-pack
                             curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
