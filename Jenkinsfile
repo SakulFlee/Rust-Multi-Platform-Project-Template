@@ -328,18 +328,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            echo "Pipeline completed. Artifacts have been archived for each platform."
-        }
-        cleanup {
-            container('buildah') {
-                sh '''
-                    # Clean up any temporary files
-                    rm -rf target/*/debug
-                '''
-            }
-        }
-    }
 }
