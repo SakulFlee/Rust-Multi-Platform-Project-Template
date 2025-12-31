@@ -29,6 +29,11 @@ pipeline {
             """
         }
     }
+    
+    options {
+        // Lock to prevent multiple builds from overwriting the same registry images
+        lock('rust-multi-platform-builder-registry')
+    }
 
     parameters {
         string(
@@ -39,6 +44,16 @@ pipeline {
     }
 
     stages {
+        stage('Login to Registry') {
+            steps {
+                container('buildah') {
+                    sh '''
+                        cat /var/run/secrets/additional/secret-jenkins-forgejo-token/token | buildah login --username jenkins --password-stdin "forgejo.sakul-flee.de"
+                    '''
+                }
+            }
+        }
+
         stage('Checkout and Submodules') {
             steps {
                 script {
@@ -51,47 +66,51 @@ pipeline {
             }
         }
 
-        stage('Build Custom Container Images') {
+        stage('Build and Push Container Images') {
             parallel {
-                stage('Build Linux Container') {
+                stage('Build and Push Linux Container') {
                     steps {
                         container('buildah') {
                             sh '''
                                 cd docker/linux
-                                buildah bud -t rust-linux:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                                buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux --build-arg RUST_VERSION=${RUST_VERSION} .
+                                buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux
                             '''
                         }
                     }
                 }
                 
-                stage('Build Windows Container') {
+                stage('Build and Push Windows Container') {
                     steps {
                         container('buildah') {
                             sh '''
                                 cd docker/windows
-                                buildah bud -t rust-windows:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                                buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows --build-arg RUST_VERSION=${RUST_VERSION} .
+                                buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows
                             '''
                         }
                     }
                 }
                 
-                stage('Build Android Container') {
+                stage('Build and Push Android Container') {
                     steps {
                         container('buildah') {
                             sh '''
                                 cd docker/android
-                                buildah bud -t rust-android:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                                buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android --build-arg RUST_VERSION=${RUST_VERSION} .
+                                buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android
                             '''
                         }
                     }
                 }
                 
-                stage('Build WASM Container') {
+                stage('Build and Push WASM Container') {
                     steps {
                         container('buildah') {
                             sh '''
                                 cd docker/wasm
-                                buildah bud -t rust-wasm:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
+                                buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
+                                buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm
                             '''
                         }
                     }
@@ -110,7 +129,7 @@ pipeline {
                                 spec:
                                   containers:
                                   - name: rust
-                                    image: rust-linux:${params.RUST_VERSION}
+                                    image: forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux
                                     command:
                                     - cat
                                     tty: true
@@ -147,7 +166,7 @@ pipeline {
                                 spec:
                                   containers:
                                   - name: rust
-                                    image: rust-windows:${params.RUST_VERSION}
+                                    image: forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows
                                     command:
                                     - cat
                                     tty: true
@@ -184,7 +203,7 @@ pipeline {
                                 spec:
                                   containers:
                                   - name: rust
-                                    image: rust-android:${params.RUST_VERSION}
+                                    image: forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android
                                     command:
                                     - cat
                                     tty: true
@@ -211,7 +230,7 @@ pipeline {
                             
                             # Generate Release KeyStore
                             cd platform/android/.android
-                            echo -e "android\nandroid\n\n\n\n\n\nyes" | keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000
+                            echo -e "android\nandroid\n\n\n\n\nyes" | keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000
                             
                             # Build
                             cd ../../..
@@ -234,7 +253,7 @@ pipeline {
                                 spec:
                                   containers:
                                   - name: rust
-                                    image: rust-wasm:${params.RUST_VERSION}
+                                    image: forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm
                                     command:
                                     - cat
                                     tty: true
