@@ -29,7 +29,7 @@ pipeline {
             """
         }
     }
-    
+
     options {
         // Lock to prevent multiple builds from overwriting the same registry images
         lock('rust-multi-platform-builder-registry')
@@ -67,51 +67,55 @@ pipeline {
         }
 
         stage('Build and Push Container Images') {
-            parallel {
-                stage('Build and Push Linux Container') {
-                    steps {
-                        container('buildah') {
-                            sh '''
-                                cd docker/linux
-                                buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux --build-arg RUST_VERSION=${RUST_VERSION} .
-                                buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux
-                            '''
+            steps {
+                lock('rust-multi-platform-builder-registry') {
+                    parallel {
+                        stage('Build and Push Linux Container') {
+                            steps {
+                                container('buildah') {
+                                    sh '''
+                                        cd docker/linux
+                                        buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux
+                                    '''
+                                }
+                            }
                         }
-                    }
-                }
-                
-                stage('Build and Push Windows Container') {
-                    steps {
-                        container('buildah') {
-                            sh '''
-                                cd docker/windows
-                                buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows --build-arg RUST_VERSION=${RUST_VERSION} .
-                                buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows
-                            '''
+                        
+                        stage('Build and Push Windows Container') {
+                            steps {
+                                container('buildah') {
+                                    sh '''
+                                        cd docker/windows
+                                        buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows
+                                    '''
+                                }
+                            }
                         }
-                    }
-                }
-                
-                stage('Build and Push Android Container') {
-                    steps {
-                        container('buildah') {
-                            sh '''
-                                cd docker/android
-                                buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android --build-arg RUST_VERSION=${RUST_VERSION} .
-                                buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android
-                            '''
+                        
+                        stage('Build and Push Android Container') {
+                            steps {
+                                container('buildah') {
+                                    sh '''
+                                        cd docker/android
+                                        buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android
+                                    '''
+                                }
+                            }
                         }
-                    }
-                }
-                
-                stage('Build and Push WASM Container') {
-                    steps {
-                        container('buildah') {
-                            sh '''
-                                cd docker/wasm
-                                buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
-                                buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm
-                            '''
+                        
+                        stage('Build and Push WASM Container') {
+                            steps {
+                                container('buildah') {
+                                    sh '''
+                                        cd docker/wasm
+                                        buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm
+                                    '''
+                                }
+                            }
                         }
                     }
                 }
@@ -137,18 +141,20 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
-                            git config --global --add safe.directory '*'
-                            
-                            # Install target
-                            rustup target add x86_64-unknown-linux-gnu
-                            
-                            # Build
-                            cargo build --verbose --package platform_linux --target x86_64-unknown-linux-gnu --release
-                            
-                            # Test (only on host architecture)
-                            cargo test --verbose --package platform_linux --no-default-features --no-fail-fast --target x86_64-unknown-linux-gnu --release || echo "Tests may fail in cross-compilation"
-                        '''
+                        lock('rust-multi-platform-builder-registry') {
+                            sh '''
+                                git config --global --add safe.directory '*'
+                                
+                                # Install target
+                                rustup target add x86_64-unknown-linux-gnu
+                                
+                                # Build
+                                cargo build --verbose --package platform_linux --target x86_64-unknown-linux-gnu --release
+                                
+                                # Test (only on host architecture)
+                                cargo test --verbose --package platform_linux --no-default-features --no-fail-fast --target x86_64-unknown-linux-gnu --release || echo "Tests may fail in cross-compilation"
+                            '''
+                        }
                     }
                     post {
                         always {
@@ -174,18 +180,20 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
-                            git config --global --add safe.directory '*'
-                            
-                            # Install target
-                            rustup target add x86_64-pc-windows-gnu
-                            
-                            # Build
-                            cargo build --verbose --package platform_windows --target x86_64-pc-windows-gnu --release
-                            
-                            # Test (only on host architecture)
-                            cargo test --verbose --package platform_windows --no-default-features --no-fail-fast --target x86_64-pc-windows-gnu --release || echo "Tests may fail in cross-compilation"
-                        '''
+                        lock('rust-multi-platform-builder-registry') {
+                            sh '''
+                                git config --global --add safe.directory '*'
+                                
+                                # Install target
+                                rustup target add x86_64-pc-windows-gnu
+                                
+                                # Build
+                                cargo build --verbose --package platform_windows --target x86_64-pc-windows-gnu --release
+                                
+                                # Test (only on host architecture)
+                                cargo test --verbose --package platform_windows --no-default-features --no-fail-fast --target x86_64-pc-windows-gnu --release || echo "Tests may fail in cross-compilation"
+                            '''
+                        }
                     }
                     post {
                         always {
@@ -216,26 +224,28 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
-                            git config --global --add safe.directory '*'
-                            
-                            # Install Android targets
-                            rustup target add x86_64-linux-android
-                            rustup target add aarch64-linux-android
-                            rustup target add i686-linux-android
-                            rustup target add armv7-linux-androideabi
-                            
-                            # Install cargo-apk
-                            cargo install cargo-apk
-                            
-                            # Generate Release KeyStore
-                            cd platform/android/.android
-                            echo -e "android\nandroid\n\n\n\n\nyes" | keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000
-                            
-                            # Build
-                            cd ../../..
-                            cargo apk build --package platform_android --release
-                        '''
+                        lock('rust-multi-platform-builder-registry') {
+                            sh '''
+                                git config --global --add safe.directory '*'
+                                
+                                # Install Android targets
+                                rustup target add x86_64-linux-android
+                                rustup target add aarch64-linux-android
+                                rustup target add i686-linux-android
+                                rustup target add armv7-linux-androideabi
+                                
+                                # Install cargo-apk
+                                cargo install cargo-apk
+                                
+                                # Generate Release KeyStore
+                                cd platform/android/.android
+                                echo -e "android\nandroid\n\n\n\n\nyes" | keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000
+                                
+                                # Build
+                                cd ../../..
+                                cargo apk build --package platform_android --release
+                            '''
+                        }
                     }
                     post {
                         always {
@@ -261,18 +271,20 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
-                            git config --global --add safe.directory '*'
-                            
-                            # Install wasm-pack
-                            curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-                            
-                            # Build
-                            wasm-pack build platform/webassembly/ --package platform_webassembly
-                            
-                            # Test
-                            wasm-pack test --node platform/webassembly/ --package platform_webassembly || echo "WASM tests may fail in Node.js environment"
-                        '''
+                        lock('rust-multi-platform-builder-registry') {
+                            sh '''
+                                git config --global --add safe.directory '*'
+                                
+                                # Install wasm-pack
+                                curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+                                
+                                # Build
+                                wasm-pack build platform/webassembly/ --package platform_webassembly
+                                
+                                # Test
+                                wasm-pack test --node platform/webassembly/ --package platform_webassembly || echo "WASM tests may fail in Node.js environment"
+                            '''
+                        }
                     }
                     post {
                         always {
