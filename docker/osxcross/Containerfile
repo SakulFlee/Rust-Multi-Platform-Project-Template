@@ -1,6 +1,6 @@
 # Use the osxcross base image with Ubuntu
 ARG OSXCROSS_VERSION=latest
-FROM --platform=$BUILDPLATFORM crazymax/osxcross:${OSXCROSS_VERSION}-ubuntu AS osxcross
+FROM --platform=$BUILDPLATFORM ghcr.io/crazy-max/osxcross:${OSXCROSS_VERSION}-ubuntu AS osxcross
 
 FROM ubuntu:22.04
 
