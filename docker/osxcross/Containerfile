@@ -1,14 +1,9 @@
-# Use the osxcross base image with Ubuntu
+# Use the osxcross base image with Ubuntu as the base
 ARG OSXCROSS_VERSION=latest
-FROM --platform=$BUILDPLATFORM ghcr.io/crazy-max/osxcross:${OSXCROSS_VERSION}-ubuntu AS osxcross
+FROM --platform=$BUILDPLATFORM ghcr.io/crazy-max/osxcross:${OSXCROSS_VERSION}-ubuntu
 
-FROM ubuntu:22.04
-
-# Install required packages
+# Install additional required packages
 RUN apt-get update && apt-get install -y \
-    clang \
-    lld \
-    libc6-dev \
     curl \
     wget \
     ca-certificates \
@@ -17,14 +12,6 @@ RUN apt-get update && apt-get install -y \
     jq \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
-
-# Copy osxcross tools from the base image
-COPY --from=osxcross /osxcross /osxcross
-
-# Set up environment variables
-ENV PATH="/osxcross/bin:$PATH"
-ENV LD_LIBRARY_PATH="/osxcross/lib:$LD_LIBRARY_PATH"
-ENV PKG_CONFIG_PATH="/osxcross/lib/pkgconfig:$PKG_CONFIG_PATH"
 
 # Install Rust
 ARG RUST_VERSION=1.92
