@@ -94,12 +94,6 @@ pipeline {
                             cd docker/wasm
                             buildah bud -t rust-wasm:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
                         '''
-                        
-                        // Build osxcross container (this one cannot be published)
-                        sh '''
-                            cd docker/osxcross
-                            buildah bud -t osxcross-rust:${RUST_VERSION} --build-arg RUST_VERSION=${RUST_VERSION} .
-                        '''
                     }
                 }
             }
@@ -152,108 +146,6 @@ pipeline {
                     post {
                         always {
                             archiveArtifacts artifacts: "target/x86_64-unknown-linux-gnu/release/platform_linux", fingerprint: true
-                        }
-                    }
-                }
-
-                stage('macOS x86_64 Build') {
-                    agent {
-                        kubernetes {
-                            yaml """
-                                apiVersion: v1
-                                kind: Pod
-                                spec:
-                                  containers:
-                                  - name: rust
-                                    image: osxcross-rust:${params.RUST_VERSION}
-                                    command:
-                                    - cat
-                                    tty: true
-                                    securityContext:
-                                      privileged: true
-                                    volumeMounts:
-                                    - mountPath: /home/jenkins/.cargo
-                                      name: cargo-cache
-                                    - mountPath: /workspace/target
-                                      name: target-cache
-                                  volumes:
-                                  - name: cargo-cache
-                                    persistentVolumeClaim:
-                                      claimName: cargo-cache-pvc
-                                  - name: target-cache
-                                    persistentVolumeClaim:
-                                      claimName: target-cache-pvc
-                            """
-                        }
-                    }
-                    steps {
-                        sh '''
-                            git config --global --add safe.directory '*'
-                            
-                            # Install target
-                            rustup target add x86_64-apple-darwin
-                            
-                            # Build
-                            cargo build --verbose --package platform_macos --target x86_64-apple-darwin --release
-                            
-                            # Test (only on host architecture)
-                            cargo test --verbose --package platform_macos --no-default-features --no-fail-fast --target x86_64-apple-darwin --release || echo "Tests may fail in cross-compilation"
-                        '''
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: "target/x86_64-apple-darwin/release/platform_macos", fingerprint: true
-                        }
-                    }
-                }
-
-                stage('macOS aarch64 Build') {
-                    agent {
-                        kubernetes {
-                            yaml """
-                                apiVersion: v1
-                                kind: Pod
-                                spec:
-                                  containers:
-                                  - name: rust
-                                    image: osxcross-rust:${params.RUST_VERSION}
-                                    command:
-                                    - cat
-                                    tty: true
-                                    securityContext:
-                                      privileged: true
-                                    volumeMounts:
-                                    - mountPath: /home/jenkins/.cargo
-                                      name: cargo-cache
-                                    - mountPath: /workspace/target
-                                      name: target-cache
-                                  volumes:
-                                  - name: cargo-cache
-                                    persistentVolumeClaim:
-                                      claimName: cargo-cache-pvc
-                                  - name: target-cache
-                                    persistentVolumeClaim:
-                                      claimName: target-cache-pvc
-                            """
-                        }
-                    }
-                    steps {
-                        sh '''
-                            git config --global --add safe.directory '*'
-                            
-                            # Install target
-                            rustup target add aarch64-apple-darwin
-                            
-                            # Build
-                            cargo build --verbose --package platform_macos --target aarch64-apple-darwin --release
-                            
-                            # No tests for non-host architecture
-                            echo "Build completed for aarch64-apple-darwin"
-                        '''
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: "target/aarch64-apple-darwin/release/platform_macos", fingerprint: true
                         }
                     }
                 }
@@ -365,70 +257,6 @@ pipeline {
                     post {
                         always {
                             archiveArtifacts artifacts: "target/release/apk/*", fingerprint: true
-                        }
-                    }
-                }
-
-                stage('iOS Build') {
-                    agent {
-                        kubernetes {
-                            yaml """
-                                apiVersion: v1
-                                kind: Pod
-                                spec:
-                                  containers:
-                                  - name: rust
-                                    image: osxcross-rust:${params.RUST_VERSION}
-                                    command:
-                                    - cat
-                                    tty: true
-                                    securityContext:
-                                      privileged: true
-                                    volumeMounts:
-                                    - mountPath: /home/jenkins/.cargo
-                                      name: cargo-cache
-                                    - mountPath: /workspace/target
-                                      name: target-cache
-                                  volumes:
-                                  - name: cargo-cache
-                                    persistentVolumeClaim:
-                                      claimName: cargo-cache-pvc
-                                  - name: target-cache
-                                    persistentVolumeClaim:
-                                      claimName: target-cache-pvc
-                            """
-                        }
-                    }
-                    steps {
-                        sh '''
-                            git config --global --add safe.directory '*'
-                            
-                            # Install iOS targets
-                            rustup target add x86_64-apple-ios
-                            rustup target add aarch64-apple-ios
-                            rustup target add aarch64-apple-ios-sim
-                            
-                            # Install cargo-xcodebuild
-                            cargo install cargo-xcodebuild
-                            
-                            # Install XCodeGen and JQ
-                            # Assuming these are already in the osxcross image or install via package manager
-                            
-                            # Make a copy of original Cargo.toml
-                            cp platform/ios/Cargo.toml platform/ios/Cargo.toml.original
-                            
-                            # Get and set device ID for simulator
-                            DEVICE_ID=$(xcrun simctl list devices available --json ios | jq -r ".devices | to_entries | map(select(.key | match(\".*iOS.*\"))) | map(.value)[0][0].udid")
-                            sed -i "s/device_id = .*/device_id = ${DEVICE_ID}/g" platform/ios/Cargo.toml
-                            
-                            # Build
-                            cd platform/ios
-                            cargo xcodebuild build --verbose --package platform_ios --release
-                        '''
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: "target/xcodegen/platform_ios/build/Build/Products/Release-iphonesimulator/*", fingerprint: true
                         }
                     }
                 }
