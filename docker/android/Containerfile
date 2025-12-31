@@ -3,7 +3,7 @@ FROM rust:${RUST_VERSION}
 
 # Install required packages
 RUN apt-get update && apt-get install -y \
-    openjdk-11-jdk \
+    openjdk-21-jdk \
     wget \
     curl \
     unzip \
