@@ -62,67 +62,47 @@ pipeline {
                         // Build and Push Container Images in parallel
                         parallel(
                             'Build and Push Linux Container': {
-                                stage('Build and Push Linux Container Retry') {
-                                    options {
-                                        retry(3)
-                                    }
-                                    steps {
-                                        container('buildah') {
-                                            sh """
-                                                cd docker/linux
-                                                buildah bud -t ${full}:linux --build-arg RUST_VERSION=${RUST_VERSION} .
-                                                buildah push ${full}:linux
-                                            """
+                                container('buildah') {
+                                    sh """
+                                        cd docker/linux
+                                        buildah bud -t ${full}:linux --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        retry(3) {
+                                            buildah push ${full}:linux
                                         }
-                                    }
+                                    """
                                 }
                             },
                             'Build and Push Windows Container': {
-                                stage('Build and Push Windows Container Retry') {
-                                    options {
-                                        retry(3)
-                                    }
-                                    steps {
-                                        container('buildah') {
-                                            sh """
-                                                cd docker/windows
-                                                buildah bud -t ${full}:windows --build-arg RUST_VERSION=${RUST_VERSION} .
-                                                buildah push ${full}:windows
-                                            """
+                                container('buildah') {
+                                    sh """
+                                        cd docker/windows
+                                        buildah bud -t ${full}:windows --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        retry(3) {
+                                            buildah push ${full}:windows
                                         }
-                                    }
+                                    """
                                 }
                             },
                             'Build and Push Android Container': {
-                                stage('Build and Push Android Container Retry') {
-                                    options {
-                                        retry(3)
-                                    }
-                                    steps {
-                                        container('buildah') {
-                                            sh """
-                                                cd docker/android
-                                                buildah bud -t ${full}:android --build-arg RUST_VERSION=${RUST_VERSION} .
-                                                buildah push ${full}:android
-                                            """
+                                container('buildah') {
+                                    sh """
+                                        cd docker/android
+                                        buildah bud -t ${full}:android --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        retry(3) {
+                                            buildah push ${full}:android
                                         }
-                                    }
+                                    """
                                 }
                             },
                             'Build and Push WASM Container': {
-                                stage('Build and Push WASM Container Retry') {
-                                    options {
-                                        retry(3)
-                                    }
-                                    steps {
-                                        container('buildah') {
-                                            sh """
-                                                cd docker/wasm
-                                                buildah bud -t ${full}:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
-                                                buildah push ${full}:wasm
-                                            """
+                                container('buildah') {
+                                    sh """
+                                        cd docker/wasm
+                                        buildah bud -t ${full}:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        retry(3) {
+                                            buildah push ${full}:wasm
                                         }
-                                    }
+                                    """
                                 }
                             }
                         )
