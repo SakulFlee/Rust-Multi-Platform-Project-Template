@@ -57,47 +57,73 @@ pipeline {
                         }
                         
                         // Checkout and Submodules
-                        sh """
-                            git config --global --add safe.directory '*'
-                            git submodule update --init --recursive
+                        sh """submodule update --init --recursive
                         """
                         
                         // Build and Push Container Images in parallel
                         parallel(
                             'Build and Push Linux Container': {
-                                container('buildah') {
-                                    sh """
-                                        cd docker/linux
-                                        buildah bud -t ${full}:linux --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        buildah push ${full}:linux
-                                    """
+                                stage('Build and Push Linux Container Retry') {
+                                    options {
+                                        retry(3)
+                                    }
+                                    steps {
+                                        container('buildah') {
+                                            sh """
+                                                cd docker/linux
+                                                buildah bud -t ${full}:linux --build-arg RUST_VERSION=${RUST_VERSION} .
+                                                buildah push ${full}:linux
+                                            """
+                                        }
+                                    }
                                 }
                             },
                             'Build and Push Windows Container': {
-                                container('buildah') {
-                                    sh """
-                                        cd docker/windows
-                                        buildah bud -t ${full}:windows --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        buildah push ${full}:windows
-                                    """
+                                stage('Build and Push Windows Container Retry') {
+                                    options {
+                                        retry(3)
+                                    }
+                                    steps {
+                                        container('buildah') {
+                                            sh """
+                                                cd docker/windows
+                                                buildah bud -t ${full}:windows --build-arg RUST_VERSION=${RUST_VERSION} .
+                                                buildah push ${full}:windows
+                                            """
+                                        }
+                                    }
                                 }
                             },
                             'Build and Push Android Container': {
-                                container('buildah') {
-                                    sh """
-                                        cd docker/android
-                                        buildah bud -t ${full}:android --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        buildah push ${full}:android
-                                    """
+                                stage('Build and Push Android Container Retry') {
+                                    options {
+                                        retry(3)
+                                    }
+                                    steps {
+                                        container('buildah') {
+                                            sh """
+                                                cd docker/android
+                                                buildah bud -t ${full}:android --build-arg RUST_VERSION=${RUST_VERSION} .
+                                                buildah push ${full}:android
+                                            """
+                                        }
+                                    }
                                 }
                             },
                             'Build and Push WASM Container': {
-                                container('buildah') {
-                                    sh """
-                                        cd docker/wasm
-                                        buildah bud -t ${full}:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        buildah push ${full}:wasm
-                                    """
+                                stage('Build and Push WASM Container Retry') {
+                                    options {
+                                        retry(3)
+                                    }
+                                    steps {
+                                        container('buildah') {
+                                            sh """
+                                                cd docker/wasm
+                                                buildah bud -t ${full}:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
+                                                buildah push ${full}:wasm
+                                            """
+                                        }
+                                    }
                                 }
                             }
                         )
@@ -126,8 +152,6 @@ pipeline {
                     }
                     steps {
                         sh """
-                            git config --global --add safe.directory '*'
-                            
                             # Install target
                             rustup target add x86_64-unknown-linux-gnu
                             
@@ -163,8 +187,6 @@ pipeline {
                     }
                     steps {
                         sh """
-                            git config --global --add safe.directory '*'
-                            
                             # Install target
                             rustup target add x86_64-pc-windows-gnu
                             
@@ -205,8 +227,6 @@ pipeline {
                     }
                     steps {
                         sh """
-                            git config --global --add safe.directory '*'
-                            
                             # Install Android targets
                             rustup target add x86_64-linux-android
                             rustup target add aarch64-linux-android
@@ -250,8 +270,6 @@ pipeline {
                     }
                     steps {
                         sh """
-                            git config --global --add safe.directory '*'
-                            
                             # Install wasm-pack
                             curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
                             
