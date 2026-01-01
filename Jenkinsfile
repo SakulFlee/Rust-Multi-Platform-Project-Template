@@ -1,5 +1,5 @@
 def registry = "forgejo.sakul-flee.de"
-def namespace = "templates"
+def namespace = "templates" 
 def name = "rust-multi-platform-builder"
 
 def full = "${registry}/${namespace}/${name}"
@@ -41,27 +41,28 @@ pipeline {
     }
 
     stages {
-        stage('Build Container Images') {
+        stage('Checkout and Login') {
             steps {
                 script {
-                    lock('rust-multi-platform-builder-registry') {
+                    // Login to Registry
+                    container('buildah') {
                         sh """
-                            echo "Starting build with global lock..."
+                            cat /var/run/secrets/additional/secret-jenkins-forgejo-token/token | buildah login --username jenkins --password-stdin \"${registry}\"
                         """
-                        
-                        // Login to Registry
-                        container('buildah') {
-                            sh """
-                                cat /var/run/secrets/additional/secret-jenkins-forgejo-token/token | buildah login --username jenkins --password-stdin \"${registry}\"
-                            """
-                        }
-                        
-                        // Checkout and Submodules
-                        sh "git submodule update --init --recursive"
-                        
-                        // Build and Push Container Images in parallel
-                        parallel(
-                            'Build and Push Linux Container': {
+                    }
+                    
+                    // Checkout and Submodules
+                    sh "git submodule update --init --recursive"
+                }
+            }
+        }
+
+        stage('Platform Builds with Container Images') {
+            parallel {
+                stage('Linux Build') {
+                    stages {
+                        stage('Build Linux Container') {
+                            steps {
                                 container('buildah') {
                                     sh """
                                         cd docker/linux
@@ -79,8 +80,47 @@ pipeline {
                                         done
                                     """
                                 }
-                            },
-                            'Build and Push Windows Container': {
+                            }
+                        }
+                        
+                        stage('Linux Platform Build') {
+                            agent {
+                                kubernetes {
+                                    yaml """
+                                        apiVersion: v1
+                                        kind: Pod
+                                        spec:
+                                          containers:
+                                          - name: rust
+                                            image: ${full}:linux
+                                            command:
+                                            - cat
+                                            tty: true
+                                    """
+                                }
+                            }
+                            steps {
+                                sh """
+                                    # Build (target already installed in container)
+                                    cargo build --verbose --package platform_linux --target x86_64-unknown-linux-gnu --release
+                                    
+                                    # Test (only on host architecture)
+                                    cargo test --verbose --package platform_linux --no-default-features --no-fail-fast --target x86_64-unknown-linux-gnu --release || echo "Tests may fail in cross-compilation"
+                                """
+                            }
+                            post {
+                                always {
+                                    archiveArtifacts artifacts: "target/x86_64-unknown-linux-gnu/release/platform_linux", fingerprint: true
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('Windows Build') {
+                    stages {
+                        stage('Build Windows Container') {
+                            steps {
                                 container('buildah') {
                                     sh """
                                         cd docker/windows
@@ -98,8 +138,47 @@ pipeline {
                                         done
                                     """
                                 }
-                            },
-                            'Build and Push Android Container': {
+                            }
+                        }
+                        
+                        stage('Windows Platform Build') {
+                            agent {
+                                kubernetes {
+                                    yaml """
+                                        apiVersion: v1
+                                        kind: Pod
+                                        spec:
+                                          containers:
+                                          - name: rust
+                                            image: ${full}:windows
+                                            command:
+                                            - cat
+                                            tty: true
+                                    """
+                                }
+                            }
+                            steps {
+                                sh """
+                                    # Build (target already installed in container)
+                                    cargo build --verbose --package platform_windows --target x86_64-pc-windows-gnu --release
+                                    
+                                    # Test (only on host architecture)
+                                    cargo test --verbose --package platform_windows --no-default-features --no-fail-fast --target x86_64-pc-windows-gnu --release || echo "Tests may fail in cross-compilation"
+                                """
+                            }
+                            post {
+                                always {
+                                    archiveArtifacts artifacts: "target/x86_64-pc-windows-gnu/release/platform_windows.exe", fingerprint: true
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('Android Build') {
+                    stages {
+                        stage('Build Android Container') {
+                            steps {
                                 container('buildah') {
                                     sh """
                                         cd docker/android
@@ -117,8 +196,49 @@ pipeline {
                                         done
                                     """
                                 }
-                            },
-                            'Build and Push WASM Container': {
+                            }
+                        }
+                        
+                        stage('Android Platform Build') {
+                            agent {
+                                kubernetes {
+                                    yaml """
+                                        apiVersion: v1
+                                        kind: Pod
+                                        spec:
+                                          containers:
+                                          - name: rust
+                                            image: ${full}:android
+                                            command:
+                                            - cat
+                                            tty: true
+                                            env:
+                                            - name: ANDROID_HOME
+                                              value: /opt/android-sdk
+                                            - name: ANDROID_NDK_HOME
+                                              value: /opt/android-sdk/ndk/25.1.8937393
+                                    """
+                                }
+                            }
+                            steps {
+                                sh """
+                                    # Build (targets already installed in container)
+                                    cargo apk build --package platform_android --release
+                                """
+                            }
+                            post {
+                                always {
+                                    archiveArtifacts artifacts: "target/release/apk/*", fingerprint: true
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('WebAssembly Build') {
+                    stages {
+                        stage('Build WASM Container') {
+                            steps {
                                 container('buildah') {
                                     sh """
                                         cd docker/wasm
@@ -137,143 +257,55 @@ pipeline {
                                     """
                                 }
                             }
-                        )
+                        }
+                        
+                        stage('WebAssembly Platform Build') {
+                            agent {
+                                kubernetes {
+                                    yaml """
+                                        apiVersion: v1
+                                        kind: Pod
+                                        spec:
+                                          containers:
+                                          - name: rust
+                                            image: ${full}:wasm
+                                            command:
+                                            - cat
+                                            tty: true
+                                    """
+                                }
+                            }
+                            steps {
+                                sh """
+                                    # Build (wasm-pack already installed in container)
+                                    wasm-pack build platform/webassembly/ --package platform_webassembly
+                                    
+                                    # Test
+                                    wasm-pack test --node platform/webassembly/ --package platform_webassembly || echo "WASM tests may fail in Node.js environment"
+                                """
+                            }
+                            post {
+                                always {
+                                    archiveArtifacts artifacts: "./platform/webassembly/pkg/*", fingerprint: true
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
 
-        stage('Platform Builds') {
-            parallel {
-                stage('Linux Build') {
-                    agent {
-                        kubernetes {
-                            yaml """
-                                apiVersion: v1
-                                kind: Pod
-                                spec:
-                                  containers:
-                                  - name: rust
-                                    image: ${full}:linux
-                                    command:
-                                    - cat
-                                    tty: true
-                            """
-                        }
-                    }
-                    steps {
-                        sh """
-                            # Build
-                            cargo build --verbose --package platform_linux --target x86_64-unknown-linux-gnu --release
-                            
-                            # Test (only on host architecture)
-                            cargo test --verbose --package platform_linux --no-default-features --no-fail-fast --target x86_64-unknown-linux-gnu --release || echo "Tests may fail in cross-compilation"
-                        """
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: "target/x86_64-unknown-linux-gnu/release/platform_linux", fingerprint: true
-                        }
-                    }
-                }
-
-                stage('Windows Build') {
-                    agent {
-                        kubernetes {
-                            yaml """
-                                apiVersion: v1
-                                kind: Pod
-                                spec:
-                                  containers:
-                                  - name: rust
-                                    image: ${full}:windows
-                                    command:
-                                    - cat
-                                    tty: true
-                            """
-                        }
-                    }
-                    steps {
-                        sh """
-                            # Build 
-                            cargo build --verbose --package platform_windows --target x86_64-pc-windows-gnu --release
-                            
-                            # Test (only on host architecture)
-                            cargo test --verbose --package platform_windows --no-default-features --no-fail-fast --target x86_64-pc-windows-gnu --release || echo "Tests may fail in cross-compilation"
-                        """
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: "target/x86_64-pc-windows-gnu/release/platform_windows.exe", fingerprint: true
-                        }
-                    }
-                }
-
-                stage('Android Build') {
-                    agent {
-                        kubernetes {
-                            yaml """
-                                apiVersion: v1
-                                kind: Pod
-                                spec:
-                                  containers:
-                                  - name: rust
-                                    image: ${full}:android
-                                    command:
-                                    - cat
-                                    tty: true
-                                    env:
-                                    - name: ANDROID_HOME
-                                      value: /opt/android-sdk
-                                    - name: ANDROID_NDK_HOME
-                                      value: /opt/android-sdk/ndk/25.1.8937393
-                            """
-                        }
-                    }
-                    steps {
-                        sh """
-                            # Build
-                            cargo apk build --package platform_android --release
-                        """
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: "target/release/apk/*", fingerprint: true
-                        }
-                    }
-                }
-
-                stage('WebAssembly Build') {
-                    agent {
-                        kubernetes {
-                            yaml """
-                                apiVersion: v1
-                                kind: Pod
-                                spec:
-                                  containers:
-                                  - name: rust
-                                    image: ${full}:wasm
-                                    command:
-                                    - cat
-                                    tty: true
-                            """
-                        }
-                    }
-                    steps {
-                        sh """
-                            # Build
-                            wasm-pack build platform/webassembly/ --package platform_webassembly
-                            
-                            # Test
-                            wasm-pack test --node platform/webassembly/ --package platform_webassembly || echo "WASM tests may fail in Node.js environment"
-                        """
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: "./platform/webassembly/pkg/*", fingerprint: true
-                        }
-                    }
-                }
+    post {
+        always {
+            echo "Pipeline completed. Artifacts have been archived for each platform."
+        }
+        cleanup {
+            container('buildah') {
+                sh '''
+                    # Clean up any temporary files
+                    rm -rf target/*/debug
+                '''
             }
         }
     }
