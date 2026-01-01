@@ -57,8 +57,7 @@ pipeline {
                         }
                         
                         // Checkout and Submodules
-                        sh """submodule update --init --recursive
-                        """
+                        sh "git submodule update --init --recursive"
                         
                         // Build and Push Container Images in parallel
                         parallel(
