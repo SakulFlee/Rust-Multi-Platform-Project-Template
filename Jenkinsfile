@@ -66,9 +66,17 @@ pipeline {
                                     sh """
                                         cd docker/linux
                                         buildah bud -t ${full}:linux --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        retry(3) {
-                                            buildah push ${full}:linux
-                                        }
+                                        
+                                        # Retry push operation up to 3 times
+                                        for i in {1..3}; do
+                                            if buildah push ${full}:linux; then
+                                                echo "Push successful on attempt \$i"
+                                                break
+                                            else
+                                                echo "Push failed on attempt \$i, retrying in 5 seconds..."
+                                                sleep 5
+                                            fi
+                                        done
                                     """
                                 }
                             },
@@ -77,9 +85,17 @@ pipeline {
                                     sh """
                                         cd docker/windows
                                         buildah bud -t ${full}:windows --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        retry(3) {
-                                            buildah push ${full}:windows
-                                        }
+                                        
+                                        # Retry push operation up to 3 times
+                                        for i in {1..3}; do
+                                            if buildah push ${full}:windows; then
+                                                echo "Push successful on attempt \$i"
+                                                break
+                                            else
+                                                echo "Push failed on attempt \$i, retrying in 5 seconds..."
+                                                sleep 5
+                                            fi
+                                        done
                                     """
                                 }
                             },
@@ -88,9 +104,17 @@ pipeline {
                                     sh """
                                         cd docker/android
                                         buildah bud -t ${full}:android --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        retry(3) {
-                                            buildah push ${full}:android
-                                        }
+                                        
+                                        # Retry push operation up to 3 times
+                                        for i in {1..3}; do
+                                            if buildah push ${full}:android; then
+                                                echo "Push successful on attempt \$i"
+                                                break
+                                            else
+                                                echo "Push failed on attempt \$i, retrying in 5 seconds..."
+                                                sleep 5
+                                            fi
+                                        done
                                     """
                                 }
                             },
@@ -99,9 +123,17 @@ pipeline {
                                     sh """
                                         cd docker/wasm
                                         buildah bud -t ${full}:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        retry(3) {
-                                            buildah push ${full}:wasm
-                                        }
+                                        
+                                        # Retry push operation up to 3 times
+                                        for i in {1..3}; do
+                                            if buildah push ${full}:wasm; then
+                                                echo "Push successful on attempt \$i"
+                                                break
+                                            else
+                                                echo "Push failed on attempt \$i, retrying in 5 seconds..."
+                                                sleep 5
+                                            fi
+                                        done
                                     """
                                 }
                             }
