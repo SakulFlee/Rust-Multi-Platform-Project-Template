@@ -1,6 +1,11 @@
 ARG RUST_VERSION=1.92
 FROM rust:${RUST_VERSION}
 
+# Set environment variables early to ensure Rust tools are in PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
+ENV CARGO_TERM_COLOR=always
+ENV RUST_BACKTRACE=1
+
 # Install MinGW-w64 for Windows cross-compilation
 RUN apt-get update && apt-get install -y \
     gcc-mingw-w64 \
@@ -22,11 +27,6 @@ COPY . .
 # Install Rust target for Windows and ensure Rust environment is properly set up
 RUN rustup self update && \
     rustup target add x86_64-pc-windows-gnu
-
-# Set environment variables to ensure Rust tools are in PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
-ENV CARGO_TERM_COLOR=always
-ENV RUST_BACKTRACE=1
 
 # Default command
 CMD ["bash"]

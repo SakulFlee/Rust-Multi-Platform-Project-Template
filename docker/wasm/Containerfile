@@ -1,6 +1,11 @@
 ARG RUST_VERSION=1.92
 FROM rust:${RUST_VERSION}
 
+# Set environment variables early to ensure Rust tools are in PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
+ENV CARGO_TERM_COLOR=always
+ENV RUST_BACKTRACE=1
+
 # Install Node.js for WASM testing
 RUN apt-get update && apt-get install -y \
     nodejs \
@@ -17,11 +22,6 @@ WORKDIR /workspace
 
 # Copy the project files
 COPY . .
-
-# Set environment variables to ensure Rust tools are in PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
-ENV CARGO_TERM_COLOR=always
-ENV RUST_BACKTRACE=1
 
 # Default command
 CMD ["bash"]
