@@ -163,9 +163,6 @@ pipeline {
                     }
                     steps {
                         sh """
-                            # Install target
-                            rustup target add x86_64-unknown-linux-gnu
-                            
                             # Build
                             cargo build --verbose --package platform_linux --target x86_64-unknown-linux-gnu --release
                             
@@ -198,10 +195,7 @@ pipeline {
                     }
                     steps {
                         sh """
-                            # Install target
-                            rustup target add x86_64-pc-windows-gnu
-                            
-                            # Build
+                            # Build 
                             cargo build --verbose --package platform_windows --target x86_64-pc-windows-gnu --release
                             
                             # Test (only on host architecture)
@@ -238,21 +232,7 @@ pipeline {
                     }
                     steps {
                         sh """
-                            # Install Android targets
-                            rustup target add x86_64-linux-android
-                            rustup target add aarch64-linux-android
-                            rustup target add i686-linux-android
-                            rustup target add armv7-linux-androideabi
-                            
-                            # Install cargo-apk
-                            cargo install cargo-apk
-                            
-                            # Generate Release KeyStore
-                            cd platform/android/.android
-                            echo -e "android\nandroid\n\n\n\n\nyes" | keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000
-                            
                             # Build
-                            cd ../../..
                             cargo apk build --package platform_android --release
                         """
                     }
@@ -281,9 +261,6 @@ pipeline {
                     }
                     steps {
                         sh """
-                            # Install wasm-pack
-                            curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-                            
                             # Build
                             wasm-pack build platform/webassembly/ --package platform_webassembly
                             
