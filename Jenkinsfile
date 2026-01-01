@@ -45,59 +45,59 @@ pipeline {
             steps {
                 script {
                     lock('rust-multi-platform-builder-registry') {
-                        sh '''
+                        sh """
                             echo "Starting build with global lock..."
-                        '''
+                        """
                         
                         // Login to Registry
                         container('buildah') {
-                            sh '''
+                            sh """
                                 cat /var/run/secrets/additional/secret-jenkins-forgejo-token/token | buildah login --username jenkins --password-stdin \"${registry}\"
-                            '''
+                            """
                         }
                         
                         // Checkout and Submodules
-                        sh '''
+                        sh """
                             git config --global --add safe.directory '*'
                             git submodule update --init --recursive
-                        '''
+                        """
                         
                         // Build and Push Container Images in parallel
                         parallel(
                             'Build and Push Linux Container': {
                                 container('buildah') {
-                                    sh '''
+                                    sh """
                                         cd docker/linux
                                         buildah bud -t ${full}:linux --build-arg RUST_VERSION=${RUST_VERSION} .
                                         buildah push ${full}:linux
-                                    '''
+                                    """
                                 }
                             },
                             'Build and Push Windows Container': {
                                 container('buildah') {
-                                    sh '''
+                                    sh """
                                         cd docker/windows
                                         buildah bud -t ${full}:windows --build-arg RUST_VERSION=${RUST_VERSION} .
                                         buildah push ${full}:windows
-                                    '''
+                                    """
                                 }
                             },
                             'Build and Push Android Container': {
                                 container('buildah') {
-                                    sh '''
+                                    sh """
                                         cd docker/android
                                         buildah bud -t ${full}:android --build-arg RUST_VERSION=${RUST_VERSION} .
                                         buildah push ${full}:android
-                                    '''
+                                    """
                                 }
                             },
                             'Build and Push WASM Container': {
                                 container('buildah') {
-                                    sh '''
+                                    sh """
                                         cd docker/wasm
                                         buildah bud -t ${full}:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
                                         buildah push ${full}:wasm
-                                    '''
+                                    """
                                 }
                             }
                         )
@@ -125,7 +125,7 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
+                        sh """
                             git config --global --add safe.directory '*'
                             
                             # Install target
@@ -136,7 +136,7 @@ pipeline {
                             
                             # Test (only on host architecture)
                             cargo test --verbose --package platform_linux --no-default-features --no-fail-fast --target x86_64-unknown-linux-gnu --release || echo "Tests may fail in cross-compilation"
-                        '''
+                        """
                     }
                     post {
                         always {
@@ -162,7 +162,7 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
+                        sh """
                             git config --global --add safe.directory '*'
                             
                             # Install target
@@ -173,7 +173,7 @@ pipeline {
                             
                             # Test (only on host architecture)
                             cargo test --verbose --package platform_windows --no-default-features --no-fail-fast --target x86_64-pc-windows-gnu --release || echo "Tests may fail in cross-compilation"
-                        '''
+                        """
                     }
                     post {
                         always {
@@ -204,7 +204,7 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
+                        sh """
                             git config --global --add safe.directory '*'
                             
                             # Install Android targets
@@ -223,7 +223,7 @@ pipeline {
                             # Build
                             cd ../../..
                             cargo apk build --package platform_android --release
-                        '''
+                        """
                     }
                     post {
                         always {
@@ -249,7 +249,7 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
+                        sh """
                             git config --global --add safe.directory '*'
                             
                             # Install wasm-pack
@@ -260,7 +260,7 @@ pipeline {
                             
                             # Test
                             wasm-pack test --node platform/webassembly/ --package platform_webassembly || echo "WASM tests may fail in Node.js environment"
-                        '''
+                        """
                     }
                     post {
                         always {
