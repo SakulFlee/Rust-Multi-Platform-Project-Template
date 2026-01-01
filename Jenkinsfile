@@ -1,3 +1,9 @@
+def registry = "forgejo.sakul-flee.de"
+def namespace = "templates"
+def name = "rust-multi-platform-builder"
+
+def full = "${registry}/${namespace}/${name}"
+
 pipeline {
     agent {
         kubernetes {
@@ -35,7 +41,7 @@ pipeline {
     }
 
     stages {
-        stage('Global Lock and Build') {
+        stage('Build Container Images') {
             steps {
                 script {
                     lock('rust-multi-platform-builder-registry') {
@@ -46,7 +52,7 @@ pipeline {
                         // Login to Registry
                         container('buildah') {
                             sh '''
-                                cat /var/run/secrets/additional/secret-jenkins-forgejo-token/token | buildah login --username jenkins --password-stdin "forgejo.sakul-flee.de"
+                                cat /var/run/secrets/additional/secret-jenkins-forgejo-token/token | buildah login --username jenkins --password-stdin \"${registry}\"
                             '''
                         }
                         
@@ -62,8 +68,8 @@ pipeline {
                                 container('buildah') {
                                     sh '''
                                         cd docker/linux
-                                        buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux
+                                        buildah bud -t ${full}:linux --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        buildah push ${full}:linux
                                     '''
                                 }
                             },
@@ -71,8 +77,8 @@ pipeline {
                                 container('buildah') {
                                     sh '''
                                         cd docker/windows
-                                        buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows
+                                        buildah bud -t ${full}:windows --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        buildah push ${full}:windows
                                     '''
                                 }
                             },
@@ -80,8 +86,8 @@ pipeline {
                                 container('buildah') {
                                     sh '''
                                         cd docker/android
-                                        buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android
+                                        buildah bud -t ${full}:android --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        buildah push ${full}:android
                                     '''
                                 }
                             },
@@ -89,8 +95,8 @@ pipeline {
                                 container('buildah') {
                                     sh '''
                                         cd docker/wasm
-                                        buildah bud -t forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
-                                        buildah push forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm
+                                        buildah bud -t ${full}:wasm --build-arg RUST_VERSION=${RUST_VERSION} .
+                                        buildah push ${full}:wasm
                                     '''
                                 }
                             }
@@ -111,7 +117,7 @@ pipeline {
                                 spec:
                                   containers:
                                   - name: rust
-                                    image: forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:linux
+                                    image: ${full}:linux
                                     command:
                                     - cat
                                     tty: true
@@ -148,7 +154,7 @@ pipeline {
                                 spec:
                                   containers:
                                   - name: rust
-                                    image: forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:windows
+                                    image: ${full}:windows
                                     command:
                                     - cat
                                     tty: true
@@ -185,7 +191,7 @@ pipeline {
                                 spec:
                                   containers:
                                   - name: rust
-                                    image: forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:android
+                                    image: ${full}:android
                                     command:
                                     - cat
                                     tty: true
@@ -235,7 +241,7 @@ pipeline {
                                 spec:
                                   containers:
                                   - name: rust
-                                    image: forgejo.sakul-flee.de/Templates/rust-multi-platform-builder:wasm
+                                    image: ${full}:wasm
                                     command:
                                     - cat
                                     tty: true
