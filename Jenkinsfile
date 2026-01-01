@@ -15,17 +15,13 @@ pipeline {
                       privileged: true
                       runAsUser: 0
                     volumeMounts:
-                    - mountPath: /run/containerd/containerd.sock
-                      name: containerd-sock
-                    - mountPath: /var/lib/containers
-                      name: containers-storage
+                      - name: forgejo-token
+                        mountPath: /var/run/secrets/additional/secret-jenkins-forgejo-token
+                        readOnly: true
                   volumes:
-                  - name: containerd-sock
-                    hostPath:
-                      path: /run/k0s/containerd.sock
-                      type: Socket
-                  - name: containers-storage
-                    emptyDir: {}
+                    - name: forgejo-token
+                      secret:
+                        secretName: secret-jenkins-forgejo
             """
         }
     }
