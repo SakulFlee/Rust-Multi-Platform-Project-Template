@@ -19,10 +19,12 @@ WORKDIR /workspace
 # Copy the project files
 COPY . .
 
-# Install Rust target for Windows
-RUN rustup target add x86_64-pc-windows-gnu
+# Install Rust target for Windows and ensure Rust environment is properly set up
+RUN rustup self update && \
+    rustup target add x86_64-pc-windows-gnu
 
-# Set environment variables
+# Set environment variables to ensure Rust tools are in PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
 ENV CARGO_TERM_COLOR=always
 ENV RUST_BACKTRACE=1
 

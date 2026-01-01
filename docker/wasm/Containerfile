@@ -8,8 +8,9 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install wasm-pack
-RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+# Install wasm-pack and ensure Rust environment is properly set up
+RUN rustup self update && \
+    curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
 # Set up the working directory
 WORKDIR /workspace
@@ -17,7 +18,8 @@ WORKDIR /workspace
 # Copy the project files
 COPY . .
 
-# Set environment variables
+# Set environment variables to ensure Rust tools are in PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
 ENV CARGO_TERM_COLOR=always
 ENV RUST_BACKTRACE=1
 

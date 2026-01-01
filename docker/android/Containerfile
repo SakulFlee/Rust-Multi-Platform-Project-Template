@@ -31,8 +31,9 @@ RUN yes | sdkmanager --licenses
 # Install required Android components
 RUN sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.1.8937393"
 
-# Install Rust Android targets
-RUN rustup target add x86_64-linux-android \
+# Install Rust Android targets and ensure Rust environment is properly set up
+RUN rustup self update && \
+    rustup target add x86_64-linux-android \
     aarch64-linux-android \
     i686-linux-android \
     armv7-linux-androideabi
@@ -46,7 +47,8 @@ COPY . .
 # Install cargo-apk
 RUN cargo install cargo-apk
 
-# Set environment variables
+# Set environment variables to ensure Rust tools are in PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
 ENV CARGO_TERM_COLOR=always
 ENV RUST_BACKTRACE=1
 
