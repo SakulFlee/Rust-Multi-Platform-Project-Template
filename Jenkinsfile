@@ -16,14 +16,6 @@ pipeline {
                       value: "always"
                     - name: RUST_BACKTRACE
                       value: "full"
-                    volumeMounts:
-                    - name: apt-tmp
-                      mountPath: /var/lib/apt/lists
-                    securityContext:
-                      privileged: true
-                  volumes:
-                  - name: apt-tmp
-                    emptyDir: {}
             """
         }
     }
@@ -32,12 +24,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 sh "git submodule update --init --recursive"
-            }
-        }
-
-        stage('Setup') {
-            steps {
-                sh "apt-get update && apt-get install -y build-essential gcc gcc-multilib curl"
             }
         }
 
