@@ -329,10 +329,7 @@ pipeline {
             echo "Pipeline completed. Artifacts have been archived for each platform."
         }
         cleanup {
-            sh '''
-                # Clean up any temporary files
-                rm -rf target/*/debug
-            '''
+            sh 'rm -rf target/*/debug'
         }
     }
 }
