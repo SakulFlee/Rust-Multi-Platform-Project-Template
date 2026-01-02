@@ -13,6 +13,8 @@ pipeline {
                     tty: true
                     securityContext:
                       runAsUser: 0
+                      runAsGroup: 0
+                      readOnlyRootFilesystem: false
                     env:
                     - name: CARGO_TERM_COLOR
                       value: "always"
