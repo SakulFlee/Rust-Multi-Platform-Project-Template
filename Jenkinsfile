@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            defaultContainer 'rust' 
+            label 
             yaml """
                 apiVersion: v1
                 kind: Pod
@@ -9,7 +9,7 @@ pipeline {
                   containers:
                   - name: rust
                     image: rust:latest
-                    imagePullPolicy: always 
+                    imagePullPolicy: Always 
                     command: ["cat"]
                     env:
                     - name: CARGO_TERM_COLOR
