@@ -22,9 +22,9 @@ pipeline {
 
     parameters {
         string(
-            name: 'RUST_VERSION',
-            defaultValue: '1.92',
-            description: 'Rust version to use. The format follows the official Rust versioning.'
+            name: "RUST_VERSION",
+            defaultValue: "1.92",
+            description: "Rust version to use. The format follows the official Rust versioning."
         )
     }
 
