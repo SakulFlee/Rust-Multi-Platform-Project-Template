@@ -22,6 +22,8 @@ pipeline {
                           - FOWNER
                           - SETGID
                           - SETUID
+                      seccompProfile:
+                        type: Unconfined
                     env:
                     - name: CARGO_TERM_COLOR
                       value: "always"
