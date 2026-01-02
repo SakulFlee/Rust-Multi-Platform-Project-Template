@@ -11,24 +11,17 @@ pipeline {
                     command:
                     - cat
                     tty: true
-                    securityContext:
-                      runAsUser: 0
-                      runAsGroup: 0
-                      readOnlyRootFilesystem: false
-                      capabilities:
-                        add:
-                          - CHOWN
-                          - DAC_OVERRIDE
-                          - FOWNER
-                          - SETGID
-                          - SETUID
-                      seccompProfile:
-                        type: Unconfined
                     env:
                     - name: CARGO_TERM_COLOR
                       value: "always"
                     - name: RUST_BACKTRACE
                       value: "full"
+                    volumeMounts:
+                    - name: apt-tmp
+                      mountPath: /var/lib/apt/lists
+                  volumes:
+                  - name: apt-tmp
+                    emptyDir: {}
             """
         }
     }
