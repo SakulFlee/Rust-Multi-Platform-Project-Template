@@ -8,7 +8,7 @@ pipeline {
                 spec:
                   containers:
                   - name: rust
-                    image: rust:latest
+                    image: docker.io/rust:latest
                     imagePullPolicy: Always 
                     command: ["cat"]
                     env:
