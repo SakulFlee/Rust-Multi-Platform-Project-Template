@@ -19,6 +19,8 @@ pipeline {
                     volumeMounts:
                     - name: apt-tmp
                       mountPath: /var/lib/apt/lists
+                    securityContext:
+                      privileged: true
                   volumes:
                   - name: apt-tmp
                     emptyDir: {}
