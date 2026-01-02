@@ -15,6 +15,13 @@ pipeline {
                       runAsUser: 0
                       runAsGroup: 0
                       readOnlyRootFilesystem: false
+                      capabilities:
+                        add:
+                          - CHOWN
+                          - DAC_OVERRIDE
+                          - FOWNER
+                          - SETGID
+                          - SETUID
                     env:
                     - name: CARGO_TERM_COLOR
                       value: "always"
