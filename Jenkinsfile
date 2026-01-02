@@ -17,7 +17,7 @@ pipeline {
                     - name: CARGO_TERM_COLOR
                       value: "always"
                     - name: RUST_BACKTRACE
-                      value: "1"
+                      value: "full"
             """
         }
     }
@@ -29,19 +29,15 @@ pipeline {
             }
         }
 
+        stage('Setup') {
+            steps {
+                sh "apt-get update && apt-get install -y build-essential gcc gcc-multilib curl"
+            }
+        }
+
         stage('Build') {
             steps {
-                sh '''
-                    # Update package lists and install dependencies with sudo in case needed
-                    apt-get update && apt-get install -y build-essential gcc gcc-multilib
-                    
-                    # Verify cargo is available
-                    which cargo || echo "Cargo not found"
-                    cargo --version || echo "Cargo not working"
-                    
-                    # Build the Linux platform
-                    cargo build --verbose --package platform_linux --release
-                '''
+                sh "cargo build --verbose --package platform_linux --release"
             }
             post {
                 always {
