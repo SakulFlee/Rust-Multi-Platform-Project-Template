@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            label 
+            defaultContainer 'rust' 
             yaml """
                 apiVersion: v1
                 kind: Pod
