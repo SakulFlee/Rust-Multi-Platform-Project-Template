@@ -29,7 +29,9 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh "cargo build --verbose --package platform_linux --release"
+                container('rust') {
+                    sh "cargo build --verbose --package platform_linux --release"
+                }
             }
             post {
                 always {
